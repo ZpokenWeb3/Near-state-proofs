@@ -6,7 +6,7 @@ The algorithm for proof of inclusion the following:
 
 1) get storage key-values for the contract and respective proof for that through RPC command
 
-```http request
+```
 http post https://rpc.mainnet.near.org jsonrpc=2.0 id=dontcare method=query \
 params:='{
 "request_type": "view_state",
