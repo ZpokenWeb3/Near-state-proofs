@@ -9,12 +9,12 @@ use near_primitives::{
 use crate::nibble_slice::NibbleSlice;
 use crate::raw_node::{RawTrieNode, RawTrieNodeWithSize};
 
-struct ProofVerifier {
+pub struct ProofVerifier {
     nodes: HashMap<CryptoHash, RawTrieNodeWithSize>,
 }
 
 impl ProofVerifier {
-    fn new(proof: Vec<Arc<[u8]>>) -> Result<Self, io::Error> {
+    pub(crate) fn new(proof: Vec<Arc<[u8]>>) -> Result<Self, io::Error> {
         let nodes = proof
             .into_iter()
             .map(|bytes| {
@@ -26,7 +26,7 @@ impl ProofVerifier {
         Ok(Self { nodes })
     }
 
-    fn verify(
+    pub(crate) fn verify(
         &self,
         state_root: &StateRoot,
         account_id: &AccountId,

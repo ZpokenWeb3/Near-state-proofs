@@ -1,5 +1,8 @@
+use std::sync::Arc;
+use near_primitives::hash::CryptoHash;
+use near_primitives::types::{StoreKey, StoreValue};
+use near_primitives::views::{StateItem, ViewStateResult};
 use serde::{Deserialize, Serialize};
-
 
 #[derive(Debug, Serialize)]
 pub struct ViewStateRequest {
@@ -20,20 +23,27 @@ pub struct ViewStateParams {
 
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct ViewStateResponse {
+pub struct ViewStateResponseForProof {
+    pub result: ViewStateResult,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ViewStateResponseForValues {
     pub result: ResultData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ResultData {
-    pub block_hash: String,
-    pub block_height: u64,
-    pub proof: Vec<String>,
-    pub values: Vec<KeyValue>,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct KeyValue {
+pub struct ResultData {
+    pub block_hash: CryptoHash,
+    pub values: Vec<StateItemValues>,
+    pub proof: Vec<String>,
+}
+
+/// Item of the state, key and value are serialized in base64 and proof for inclusion of given state item.
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct StateItemValues {
     pub key: String,
     pub value: String,
 }
@@ -60,34 +70,13 @@ pub struct BlockResponse {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BlockResultData {
     pub author: String,
-    // chunks: Vec<Chunk>,
     pub header: BlockHeader,
 }
 
-
-// #[derive(Debug, Serialize, Deserialize)]
-// struct Chunk {
-//     chunk_hash: String,
-//     encoded_merkle_root: String,
-//     outcome_root: String,
-//     outgoing_receipts_root: String,
-//     prev_block_hash: String,
-//     prev_state_root: String,
-//     rent_paid: String,
-//     shard_id: u64,
-//     signature: String,
-//     tx_root: String,
-//     validator_proposals: Vec<String>,
-//     // Assuming it's a Vec<String> but might need to adjust based on actual data
-//     validator_reward: String,
-// }
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BlockHeader {
-    // approvals: Vec<Option<String>>,
     pub block_merkle_root: String,
     pub chunk_headers_root: String,
     pub prev_state_root: String,
-    // chunks_included: u128,
 }
 
