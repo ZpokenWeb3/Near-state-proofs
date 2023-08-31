@@ -32,8 +32,8 @@ pub struct ViewStateResult {
 /// Item of the state, key and value are serialized in base64 and proof for inclusion of given state item.
 #[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct StateItem {
-   pub key: StoreKey,
-   pub value: StoreValue,
+    pub key: StoreKey,
+    pub value: StoreValue,
 }
 ```
 
@@ -76,7 +76,8 @@ pub struct StateItem {
 ```
 
 3) have to ensure that the proof is valid by checking key-value existence through near-core verification logic. Proof
-   itself is all the nodes visited, that store the different pieces of a contract's / account's metadata. near-core verification logic is the following
+   itself is all the nodes visited, that store the different pieces of a contract's / account's metadata. near-core
+   verification logic is the following
 
 ```rust
 pub(crate) fn verify(
@@ -138,15 +139,15 @@ pub(crate) fn verify(
     }
     false
 }
-}
 ```
 
-```
-http post https://rpc.mainnet.near.org jsonrpc=2.0 id=dontcare method=block \
-params:='{
-"block_id": "Hpq9PKE4oS1QurBVVaG6FzQx1AqPjYrn85jAqvmV1ngY"
-}'
-```
+4) we will iterate through all the key-value pairs in the state and verify that the proof is valid for them
+
+And success - our result is matching the outcome root, so it means that our receipt was indeed processed by the
+blockchain.
+
+
+
 
 
 

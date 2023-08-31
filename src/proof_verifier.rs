@@ -9,7 +9,7 @@ use near_primitives::{
 use crate::nibble_slice::NibbleSlice;
 use crate::raw_node::{RawTrieNode, RawTrieNodeWithSize};
 
-pub struct ProofVerifier {
+pub(crate) struct ProofVerifier {
     nodes: HashMap<CryptoHash, RawTrieNodeWithSize>,
 }
 
@@ -25,6 +25,15 @@ impl ProofVerifier {
             .collect::<Result<HashMap<_, _>, io::Error>>()?;
         Ok(Self { nodes })
     }
+
+    pub(crate) fn get_nodes(&self) -> Vec<(CryptoHash, RawTrieNodeWithSize)> {
+        self.nodes.iter().map(|(crypto_hash, raw_trie_node_with_size)| (*crypto_hash, raw_trie_node_with_size.clone())).collect()
+    }
+
+    pub(crate) fn get_nodes_hashes(&self) -> Vec<CryptoHash> {
+        self.nodes.iter().map(|(crypto_hash, _)| *crypto_hash).collect()
+    }
+
 
     pub(crate) fn verify(
         &self,

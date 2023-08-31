@@ -1,7 +1,5 @@
-use std::sync::Arc;
 use near_primitives::hash::CryptoHash;
-use near_primitives::types::{StoreKey, StoreValue};
-use near_primitives::views::{StateItem, ViewStateResult};
+use near_primitives::views::{ViewStateResult};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize)]
@@ -71,12 +69,34 @@ pub struct BlockResponse {
 pub struct BlockResultData {
     pub author: String,
     pub header: BlockHeader,
+    pub chunks: Vec<Chunk>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BlockHeader {
-    pub block_merkle_root: String,
-    pub chunk_headers_root: String,
-    pub prev_state_root: String,
+    pub block_merkle_root: CryptoHash,
+    pub chunk_headers_root: CryptoHash,
+    pub chunk_receipts_root: CryptoHash,
+    pub chunk_tx_root: CryptoHash,
+    pub prev_state_root: CryptoHash,
+    pub outcome_root: CryptoHash,
+}
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Chunk {
+    chunk_hash: String,
+    encoded_merkle_root: String,
+    outcome_root: String,
+    outgoing_receipts_root: String,
+    prev_block_hash: String,
+    prev_state_root: String,
+    rent_paid: String,
+    shard_id: u64,
+    signature: String,
+    tx_root: String,
+    validator_proposals: Vec<String>,
+    // Assuming it's a Vec<String> but might need to adjust based on actual data
+    validator_reward: String,
 }
 

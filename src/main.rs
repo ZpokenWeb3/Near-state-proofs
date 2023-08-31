@@ -45,9 +45,6 @@ async fn main() -> Result<(), reqwest::Error> {
         .await?;
 
 
-    println!("result {:?}", view_state_response_for_proof.result);
-    println!("result {:?}", view_state_response_for_values.result);
-
     let block_request = BlockRequest {
         jsonrpc: "2.0",
         id: "dontcare",
@@ -63,21 +60,19 @@ async fn main() -> Result<(), reqwest::Error> {
         .await?.json().await?
         ;
 
-    println!("result {:?}", block_response.result);
+    let proof_verifier = ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
 
-    // TODO verify by prove verifier that proof is valid by constructing all the way to the expected root from the .verify function
-    //
-    // let proof_verifier = ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
-    // let root = block_response.result.header.block_merkle_root;
-    //
-    // for state_item in view_state_response_for_proof.result.values {
-    //
-    //     // Proof for known (key, value) should succeed.
-    //     assert!(
-    //         proof_verifier.verify(&root, &account_id, state_item.key.try_into().unwrap(), Some(state_item.value.try_into().unwrap())),
-    //         "proof isn't verified"
-    //     );
-    // }
+    assert!(!proof_verifier.get_nodes().is_empty(), "Proof isn't valid");
+    let mut result_proof_boolean = vec![];
+
+    for root in proof_verifier.get_nodes_hashes() {
+        for state_item in &view_state_response_for_proof.result.values {
+            result_proof_boolean.push((proof_verifier.verify(&root, &account_id, &state_item.key.to_vec(), Some(&state_item.value.to_vec())), root));
+        }
+    }
+
+
+    assert!(result_proof_boolean.iter().any(|(is_true, _)| *is_true == true), "Proof for the key-value pair isn't verified.");
 
 
     Ok(())
