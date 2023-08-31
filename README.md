@@ -1,6 +1,6 @@
 ## Message Proof of Inclusion for Near Blockchain
 
-#### Let's take a look at a factory.bridge.near contract, that are involved in a Near-Ethereum bridge functioning
+#### Let's take a look at a prover.bridge.near contract, that are involved in a Near-Ethereum bridge functioning
 
 The algorithm for proof of inclusion the following:
 
