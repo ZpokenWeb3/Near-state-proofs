@@ -4,7 +4,8 @@
 
 The algorithm for proof of inclusion the following:
 
-1) Get storage key-values for the contract and respective proof for that through RPC command
+1) configure account in config.json file
+2) Get storage key-values for the contract and respective proof for that through RPC command
 
 ```
 http post https://rpc.mainnet.near.org jsonrpc=2.0 id=dontcare method=query \
@@ -17,7 +18,7 @@ params:='{
 }'
 ```
 
-2) Having result that can be deserialized into ViewStateResult (note that this is an example call, latest query might be
+3) Having result that can be deserialized into ViewStateResult (note that this is an example call, latest query might be
    different due to rapid block production in Near)
 
 ```rust
@@ -76,7 +77,7 @@ pub struct StateItem {
 }
 ```
 
-3) Have to ensure that the proof is valid by checking key-value existence through near-core verification logic. Proof
+4)  Have to ensure that the proof is valid by checking key-value existence through near-core verification logic. Proof
    itself is all the nodes visited, that store the different pieces of a contract's / account's metadata. near-core
    verification logic is the following
 
@@ -142,11 +143,11 @@ pub(crate) fn verify(
 }
 ```
 
-4) we will iterate through all the key-value pairs in the state and verify that the proof is valid for them and check
+5) we will iterate through all the key-value pairs in the state and verify that the proof is valid for them and check
    that there if a respective amount of proofs for each key-value
 
 
-5) And success, so it means that our value was indeed included by the blockchain.
+6) and success, so it means that our value was indeed included by the blockchain.
 
 
 
