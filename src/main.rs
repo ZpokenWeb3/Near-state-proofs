@@ -7,12 +7,22 @@ use std::str::FromStr;
 use near_primitives::types::AccountId;
 use reqwest::Client;
 use crate::proof_verifier::ProofVerifier;
-use crate::utils::{ViewStateParams, ViewStateRequest, ViewStateResponseForProof};
+use crate::utils::{Config, ViewStateParams, ViewStateRequest, ViewStateResponseForProof};
+
+
+use std::fs;
+
 
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
-    let account_id = AccountId::from_str("prover.bridge.near").unwrap();
+    // reading config for the account
+    let config_str = fs::read_to_string("./config.json").unwrap();
 
+    let config: Config = serde_json::from_str(&config_str).unwrap();
+
+    let account_id = AccountId::from_str(&*config.account).unwrap();
+
+    // querying state for the account
     let view_state_request = ViewStateRequest {
         jsonrpc: "2.0",
         id: "dontcare",
@@ -28,6 +38,8 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let client = Client::new();
 
+
+    // constructing and verifying proof for all key-value pairs
     let view_state_response_for_proof: ViewStateResponseForProof = client.post("https://rpc.mainnet.near.org")
         .json(&view_state_request)
         .send()
@@ -51,7 +63,6 @@ async fn main() -> Result<(), reqwest::Error> {
     assert_eq!(result_proof_boolean.len(), view_state_response_for_proof.result.values.len(), "Proof for the key-value pair isn't verified.");
 
     assert!(result_proof_boolean.iter().any(|(is_true, _)| *is_true == true), "Proof for the key-value pair isn't verified.");
-
 
     Ok(())
 }
