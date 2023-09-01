@@ -4,7 +4,7 @@
 
 The algorithm for proof of inclusion the following:
 
-1) configure account in config.json file
+1) Configure account in config.json file
 2) Get storage key-values for the contract and respective proof for that through RPC command
 
 ```
@@ -143,11 +143,11 @@ pub(crate) fn verify(
 }
 ```
 
-5) we will iterate through all the key-value pairs in the state and verify that the proof is valid for them and check
+5) We will iterate through all the key-value pairs in the state and verify that the proof is valid for them and check
    that there if a respective amount of proofs for each key-value
 
 
-6) and success, so it means that our value was indeed included by the blockchain.
+6) And success, so it means that our value was indeed included by the blockchain.
 
 
 
