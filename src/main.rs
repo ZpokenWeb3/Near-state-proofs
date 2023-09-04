@@ -1,20 +1,18 @@
-mod utils;
+mod nibble_slice;
 mod proof_verifier;
 mod raw_node;
-mod nibble_slice;
+mod utils;
 
-use std::str::FromStr;
-use near_primitives::types::AccountId;
-use reqwest::Client;
 use crate::proof_verifier::ProofVerifier;
 use crate::utils::{Config, ViewStateParams, ViewStateRequest, ViewStateResponseForProof};
-
+use near_primitives::types::AccountId;
+use reqwest::{Client, Error};
+use std::str::FromStr;
 
 use std::fs;
 
-
 #[tokio::main]
-async fn main() -> Result<(), reqwest::Error> {
+async fn main() -> Result<(), Error> {
     // reading config for the account
     let config_str = fs::read_to_string("./config.json").unwrap();
 
@@ -38,31 +36,58 @@ async fn main() -> Result<(), reqwest::Error> {
 
     let client = Client::new();
 
-
     // constructing and verifying proof for all key-value pairs
-    let view_state_response_for_proof: ViewStateResponseForProof = client.post("https://rpc.mainnet.near.org")
+    if client
+        .post("https://rpc.mainnet.near.org")
         .json(&view_state_request)
         .send()
-        .await?
-        .json()
-        .await?;
+        .await?.json::<ViewStateResponseForProof>().await.is_err() {
+        panic!(
+            "State of contract {}  is too large to be viewed",
+            account_id
+        );
+    } else {
+        let view_state_response_for_proof: ViewStateResponseForProof = client
+            .post("https://rpc.mainnet.near.org")
+            .json(&view_state_request)
+            .send()
+            .await?
+            .json()
+            .await?;
 
-    let proof_verifier = ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
+        let proof_verifier =
+            ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
 
-    assert!(!proof_verifier.get_nodes().is_empty(), "Proof isn't valid");
-    let mut result_proof_boolean = vec![];
+        assert!(!proof_verifier.get_nodes().is_empty(), "Proof isn't valid");
+        let mut result_proof_boolean = vec![];
 
-    for root in proof_verifier.get_nodes_hashes() {
-        for state_item in &view_state_response_for_proof.result.values {
-            let is_true = proof_verifier.verify(&root, &account_id, &state_item.key.to_vec(), Some(&state_item.value.to_vec()));
-            if is_true {
-                result_proof_boolean.push((is_true, root));
+        for root in proof_verifier.get_nodes_hashes() {
+            for state_item in &view_state_response_for_proof.result.values {
+                let is_true = proof_verifier.verify(
+                    &root,
+                    &account_id,
+                    &state_item.key.to_vec(),
+                    Some(&state_item.value.to_vec()),
+                );
+                if is_true {
+                    result_proof_boolean.push((is_true, root));
+                }
             }
         }
+
+        assert_eq!(
+            result_proof_boolean.len(),
+            view_state_response_for_proof.result.values.len(),
+            "Proof for the key-value pair isn't verified."
+        );
+
+        assert!(
+            result_proof_boolean
+                .iter()
+                .any(|(is_true, _)| *is_true == true),
+            "Proof for the key-value pair isn't verified."
+        );
+
+        Ok(())
     }
-    assert_eq!(result_proof_boolean.len(), view_state_response_for_proof.result.values.len(), "Proof for the key-value pair isn't verified.");
-
-    assert!(result_proof_boolean.iter().any(|(is_true, _)| *is_true == true), "Proof for the key-value pair isn't verified.");
-
-    Ok(())
 }
