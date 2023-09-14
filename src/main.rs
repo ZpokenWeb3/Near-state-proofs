@@ -8,11 +8,15 @@ use crate::utils::{Config, ViewStateParams, ViewStateRequest, ViewStateResponseF
 use near_primitives::types::AccountId;
 use reqwest::{Client, Error};
 use std::str::FromStr;
-
+use std::fs::File;
+use std::io::Write;
 use std::fs;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    // open outcome for writing
+    let mut file = File::create("key_value_with_proofs.txt").expect("Unable to create file");
+
     // reading config for the account
     let config_str = fs::read_to_string("./config.json").unwrap();
 
@@ -71,6 +75,11 @@ async fn main() -> Result<(), Error> {
                 );
                 if is_true {
                     result_proof_boolean.push((is_true, root));
+
+                    writeln!(file, "Key: {:?}", state_item.key).expect("Unable to write to file");
+                    writeln!(file, "Value: {:?}", state_item.value).expect("Unable to write to file");
+                    writeln!(file, "Proof: {:?}", root).expect("Unable to write to file");
+                    writeln!(file, "-----------------------------").expect("Unable to write to file");
                 }
             }
         }
