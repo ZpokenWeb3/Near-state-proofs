@@ -18,7 +18,7 @@ async fn main() -> Result<(), Error> {
     let mut file = File::create("key_value_with_proofs.txt").expect("Unable to create file");
 
     // reading config for the account
-    let config_str = fs::read_to_string("./config.json").unwrap();
+    let config_str = fs::read_to_string("config.json").unwrap();
 
     let config: Config = serde_json::from_str(&config_str).unwrap();
 

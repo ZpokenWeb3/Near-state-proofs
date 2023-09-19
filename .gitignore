@@ -1,2 +1,6 @@
 /target
 .idea
+contracts/mock-token/target
+contracts/target
+contracts/vault-contract/target
+script/target
