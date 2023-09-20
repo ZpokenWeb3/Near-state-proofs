@@ -42,7 +42,7 @@ async fn main() -> Result<(), Error> {
 
     // constructing and verifying proof for all key-value pairs
     if client
-        .post("https://rpc.mainnet.near.org")
+        .post("https://rpc.testnet.near.org")
         .json(&view_state_request)
         .send()
         .await?.json::<ViewStateResponseForProof>().await.is_err() {
@@ -52,12 +52,14 @@ async fn main() -> Result<(), Error> {
         );
     } else {
         let view_state_response_for_proof: ViewStateResponseForProof = client
-            .post("https://rpc.mainnet.near.org")
+            .post("https://rpc.testnet.near.org")
             .json(&view_state_request)
             .send()
             .await?
             .json()
             .await?;
+
+        print!("{:?}", view_state_response_for_proof);
 
         let proof_verifier =
             ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();

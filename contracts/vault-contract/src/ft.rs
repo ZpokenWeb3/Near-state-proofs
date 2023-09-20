@@ -23,11 +23,9 @@ impl FungibleTokenReceiver for VaultContract {
         log!(format!("sender_id {sender_id}, msg {msg}"));
 
         let action: Actions = serde_json::from_str(&msg).expect("Incorrect command in transfer");
-
+        let receiver_addr = sender_id.clone();
         match action {
-            Actions::Deposit { receiver_addr } => {
-                self.deposit(amount, sender_id, receiver_addr, asset_id)
-            }
+            Actions::Deposit {} => self.deposit_from_ft(amount, sender_id, receiver_addr, asset_id),
         }
     }
 }

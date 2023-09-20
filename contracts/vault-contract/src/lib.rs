@@ -49,7 +49,7 @@ impl Default for VaultContract {
 #[near_bindgen]
 impl VaultContract {
     #[init]
-    pub fn new(count_param: u128) -> Self {
+    pub fn initialize_vault_contract(count_param: u128) -> Self {
         require!(!env::state_exists(), "Already initialized");
 
         Self {

@@ -10,8 +10,12 @@ impl VaultContract {
         self.asset_id.clone().to_string()
     }
 
-    pub fn view_deposited_amount(&self) -> Balance {
+    pub fn view_deposited_amount(&self) -> WBalance {
         self.deposited_amount.into()
+    }
+
+    pub fn view_count(&self) -> u128 {
+        self.count_param.clone()
     }
 
     pub fn view_depositor_info(&self, depositor_addr: AccountId) -> BridgeInfo {
@@ -33,7 +37,7 @@ mod tests {
 
     #[test]
     fn test_view_single_slots() {
-        let contract = VaultContract::new(12);
+        let contract = VaultContract::initialize_vault_contract(12);
 
         let asset_id = contract.view_asset_id();
         let receiver_addr = contract.view_receiver_addr();

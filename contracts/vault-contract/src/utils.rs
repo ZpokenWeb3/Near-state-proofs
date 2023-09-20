@@ -5,7 +5,7 @@ use std::fmt;
 #[serde(crate = "near_sdk::serde")]
 #[derive(Debug)]
 pub enum Actions {
-    Deposit { receiver_addr: AccountId },
+    Deposit {},
 }
 
 impl fmt::Display for Actions {
