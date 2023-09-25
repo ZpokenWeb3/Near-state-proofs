@@ -1,3 +1,6 @@
+cargo build --release --manifest-path ./Cargo.toml --target wasm32-unknown-unknown && cargo test
+
+wait
 
 echo y | near delete first.zpoken-vault-contract.testnet zpoken-vault-contract.testnet
 

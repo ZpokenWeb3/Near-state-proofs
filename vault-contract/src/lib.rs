@@ -15,12 +15,11 @@ pub type WBalance = U128;
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct VaultContract {
-    sender: AccountId,
-    receiver_addr: AccountId,
-    asset_id: AccountId,
-    deposited_amount: Balance,
-
-    count_param: Balance,
+    pub sender: AccountId,
+    pub receiver_addr: AccountId,
+    pub asset_id: AccountId,
+    pub deposited_amount: Balance,
+    pub count_param: Balance,
 }
 
 #[derive(BorshDeserialize, BorshSerialize, Serialize, Deserialize)]
