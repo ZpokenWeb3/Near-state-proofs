@@ -1,10 +1,12 @@
+extern crate core;
+
 mod nibble_slice;
 mod proof_verifier;
 mod raw_node;
 mod utils;
 
 use crate::proof_verifier::ProofVerifier;
-use crate::utils::{Config, ViewStateParams, ViewStateRequest, ViewStateResponseForProof};
+use crate::utils::{Config, decode_base64, ViewStateParams, ViewStateRequest, ViewStateResponseForProof, ViewStateResponseForValues};
 use near_primitives::types::AccountId;
 use reqwest::{Client, Error};
 use std::str::FromStr;
@@ -24,6 +26,12 @@ async fn main() -> Result<(), Error> {
 
     let account_id = AccountId::from_str(&*config.account).unwrap();
 
+    let rpc_url = match config.network {
+        0 => { "https://rpc.testnet.near.org" }
+        1 => { "https://rpc.mainnet.near.org" }
+        _ => { panic!("Wrong network. Should be testnet OR mainnet") }
+    };
+
     // querying state for the account
     let view_state_request = ViewStateRequest {
         jsonrpc: "2.0",
@@ -42,7 +50,7 @@ async fn main() -> Result<(), Error> {
 
     // constructing and verifying proof for all key-value pairs
     if client
-        .post("https://rpc.testnet.near.org")
+        .post(rpc_url)
         .json(&view_state_request)
         .send()
         .await?.json::<ViewStateResponseForProof>().await.is_err() {
@@ -52,14 +60,27 @@ async fn main() -> Result<(), Error> {
         );
     } else {
         let view_state_response_for_proof: ViewStateResponseForProof = client
-            .post("https://rpc.testnet.near.org")
+            .post(rpc_url)
             .json(&view_state_request)
             .send()
             .await?
             .json()
             .await?;
 
-        print!("{:?}", view_state_response_for_proof);
+        let view_state_response_for_values: ViewStateResponseForValues = client
+            .post(rpc_url)
+            .json(&view_state_request)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+
+        for el in view_state_response_for_values.result.values {
+            println!("key {:?}", decode_base64(el.key.as_str()));
+            println!("value {:?}", decode_base64(el.value.as_str()));
+            println!("----------------------------------------------------------");
+        }
 
         let proof_verifier =
             ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
@@ -78,10 +99,11 @@ async fn main() -> Result<(), Error> {
                 if is_true {
                     result_proof_boolean.push((is_true, root));
 
+
                     writeln!(file, "Key: {:?}", state_item.key).expect("Unable to write to file");
                     writeln!(file, "Value: {:?}", state_item.value).expect("Unable to write to file");
                     writeln!(file, "Proof: {:?}", root).expect("Unable to write to file");
-                    writeln!(file, "-----------------------------").expect("Unable to write to file");
+                    writeln!(file, "----------------------------------------------------------").expect("Unable to write to file");
                 }
             }
         }

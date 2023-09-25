@@ -1,4 +1,3 @@
-
 use near_primitives::views::{ViewStateResult};
 use serde::{Deserialize, Serialize};
 
@@ -25,6 +24,23 @@ pub struct ViewStateResponseForProof {
     pub result: ViewStateResult,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ViewStateResponseForValues {
+    pub result: ViewStateResultForValues,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct ViewStateResultForValues {
+    pub values: Vec<StateItemForValue>,
+    pub proof: Vec<String>,
+}
+
+#[derive(serde::Serialize, serde::Deserialize, Debug, PartialEq, Eq, Clone)]
+pub struct StateItemForValue {
+    pub key: String,
+    pub value: String,
+}
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ResultData {
@@ -42,4 +58,21 @@ pub struct StateItemValues {
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub account: String,
+    pub network: u8,
 }
+
+
+pub fn decode_base64(encoded: &str) -> Result<String, &'static str> {
+    // Decode the base64 string to bytes
+    let decoded_bytes = match base64::decode(encoded) {
+        Ok(bytes) => bytes,
+        Err(_) => return Err("Invalid base64 encoding"),
+    };
+
+    // Convert the bytes to a UTF-8 string
+    match String::from_utf8(decoded_bytes) {
+        Ok(decoded_string) => Ok(decoded_string),
+        Err(_) => Err("Invalid UTF-8 sequence"),
+    }
+}
+

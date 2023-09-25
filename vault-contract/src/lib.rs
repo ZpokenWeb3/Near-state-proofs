@@ -1,30 +1,21 @@
 mod deposit;
-mod ft;
-mod utils;
+
 mod view;
 
 use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
-use near_sdk::collections::UnorderedMap;
 use near_sdk::json_types::U128;
 use near_sdk::require;
 use near_sdk::serde::{Deserialize, Serialize};
-use near_sdk::{env, log, near_bindgen, AccountId, Balance, BorshStorageKey, PromiseOrValue};
+use near_sdk::{env, near_bindgen, AccountId, Balance, PromiseOrValue};
 
 use std::str::FromStr;
 
 pub type WBalance = U128;
 
-#[derive(BorshSerialize, BorshStorageKey)]
-enum StorageKeys {
-    BridgeInfo,
-}
-
 #[near_bindgen]
 #[derive(BorshDeserialize, BorshSerialize)]
 pub struct VaultContract {
-    // depositor_addr -> BridgeInfo
-    bridge_info: UnorderedMap<AccountId, BridgeInfo>,
-
+    sender: AccountId,
     receiver_addr: AccountId,
     asset_id: AccountId,
     deposited_amount: Balance,
@@ -53,7 +44,7 @@ impl VaultContract {
         require!(!env::state_exists(), "Already initialized");
 
         Self {
-            bridge_info: UnorderedMap::new(StorageKeys::BridgeInfo),
+            sender: AccountId::from_str("whatever").unwrap(),
             receiver_addr: AccountId::from_str("whatever").unwrap(),
             asset_id: AccountId::from_str("whatever").unwrap(),
             deposited_amount: 0,
