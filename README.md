@@ -89,7 +89,7 @@ The inner algorithm for proof of inclusion the following:
 ```
 
 4) Having result that can be deserialized into ViewStateResult (note that this is an example call, latest query might be
-   different due to rapid block production in Near). There is inner storage optimisation so it might store it altogether in one slot for the sake of saving memory
+   different due to rapid block production in Near). There is inner  optimization so it might store it all together in one slot for the sake of saving memory
 
 ```rust
    #[serde_as]
@@ -217,13 +217,60 @@ The inner algorithm for proof of inclusion the following:
    that there if a respective amount of proofs for each key-value
 
 
-7) And success, so it means that our value was indeed included by the blockchain.
+7) We proved that arbitrary data was indeed included in the smart contract state.
+
+8) Now we want to ensure that it is included in Near Blockchain itself. So we will iterate through all the previous blocks to see in what chunk out account's metadata lives in. Respective code for that is the following:
 
 
-8) 
+```rust
+loop {
+            let block_request = BlockRequestOptionTwo {
+                jsonrpc: "2.0",
+                id: "dontcare",
+                method: "block",
+                params: BlockParamBlockHeight {
+                    block_id: block_height_iter.clone(),
+                },
+            };
+
+            if client.post(rpc_url)
+                .json(&block_request)
+                .send()
+                .await?.json::<BlockResponse>().await.is_err() {
+                block_height_iter -= 1;
+                continue;
+            } else {
+                let block_response: BlockResponse = client.post(rpc_url)
+                    .json(&block_request)
+                    .send()
+                    .await?.json().await?
+                    ;
+
+                for chunk in block_response.result.chunks.iter() {
+                    if chunk.prev_state_root == state_root {
+                        writeln!(file, "{}", format!("success prev_state_root {:?} for the block {:?}", chunk.prev_state_root, block_response.result.header.height)).expect("Unable to write to file");
+                        println!("Script finished!");
+
+                        exit(0);
+                    }
+                }
+            }
 
 
+            block_height_iter -= 1;
+        }
+```
 
+9) And success, the result is shown in result_with_proofs.txt that means that the block with a hash of EhYzmehyFZo3sxVjJjkfrhtvgbYbWcNnTwUm9KmfgyDg has a previous state root, that is equal to ours state root proof. So it means that our value indeed included in the blockchain
+```
+
+Key: StoreKey([83, 84, 65, 84, 69])
+Value: StoreValue([29, 0, 0, 0, 122, 112, 111, 107, 101, 110, 45, 118, 97, 117, 108, 116, 45, 99, 111, 110, 116, 114, 97, 99, 116, 46, 116, 101, 115, 116, 110, 101, 116, 13, 0, 0, 0, 114, 101, 99, 101, 105, 118, 101, 114, 46, 110, 101, 97, 114, 10, 0, 0, 0, 97, 115, 115, 101, 116, 46, 110, 101, 97, 114, 0, 0, 0, 208, 121, 0, 161, 63, 121, 92, 118, 6, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+State Root: EhYzmehyFZo3sxVjJjkfrhtvgbYbWcNnTwUm9KmfgyDg
+Block Hash: "AUZ8KGc3yGPAiWcpo2fJ1GgkbR9VE68D2TjkYwEAoo8R"
+----------------------------------------------------------
+success prev_state_root "EhYzmehyFZo3sxVjJjkfrhtvgbYbWcNnTwUm9KmfgyDg" for the block 139406234
+```
 
 
 

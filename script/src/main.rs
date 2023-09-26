@@ -6,18 +6,23 @@ mod raw_node;
 mod utils;
 
 use crate::proof_verifier::ProofVerifier;
-use crate::utils::{Config, decode_base64, ViewStateParams, ViewStateRequest, ViewStateResponseForProof, ViewStateResponseForValues};
+use crate::utils::{
+    BlockParamBlockHeight, BlockParamString, BlockRequestOptionOne, BlockRequestOptionTwo,
+    BlockResponse, Config, ViewStateParams, ViewStateRequest, ViewStateResponseForProof,
+    ViewStateResponseForValues,
+};
 use near_primitives::types::AccountId;
 use reqwest::{Client, Error};
-use std::str::FromStr;
+use std::fs;
 use std::fs::File;
 use std::io::Write;
-use std::fs;
+use std::process::exit;
+use std::str::FromStr;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
     // open outcome for writing
-    let mut file = File::create("key_value_with_proofs.txt").expect("Unable to create file");
+    let mut file = File::create("result_with_proofs.txt").expect("Unable to create file");
 
     // reading config for the account
     let config_str = fs::read_to_string("config.json").unwrap();
@@ -27,9 +32,11 @@ async fn main() -> Result<(), Error> {
     let account_id = AccountId::from_str(&*config.account).unwrap();
 
     let rpc_url = match config.network {
-        0 => { "https://rpc.testnet.near.org" }
-        1 => { "https://rpc.mainnet.near.org" }
-        _ => { panic!("Wrong network. Should be testnet OR mainnet") }
+        0 => "https://rpc.testnet.near.org",
+        1 => "https://rpc.mainnet.near.org",
+        _ => {
+            panic!("Wrong network. Should be testnet OR mainnet")
+        }
     };
 
     // querying state for the account
@@ -53,7 +60,11 @@ async fn main() -> Result<(), Error> {
         .post(rpc_url)
         .json(&view_state_request)
         .send()
-        .await?.json::<ViewStateResponseForProof>().await.is_err() {
+        .await?
+        .json::<ViewStateResponseForProof>()
+        .await
+        .is_err()
+    {
         panic!(
             "State of contract {}  is too large to be viewed",
             account_id
@@ -75,13 +86,6 @@ async fn main() -> Result<(), Error> {
             .json()
             .await?;
 
-
-        for el in view_state_response_for_values.result.values {
-            println!("key {:?}", decode_base64(el.key.as_str()));
-            println!("value {:?}", decode_base64(el.value.as_str()));
-            println!("----------------------------------------------------------");
-        }
-
         let proof_verifier =
             ProofVerifier::new(view_state_response_for_proof.result.proof).unwrap();
 
@@ -99,11 +103,21 @@ async fn main() -> Result<(), Error> {
                 if is_true {
                     result_proof_boolean.push((is_true, root));
 
-
                     writeln!(file, "Key: {:?}", state_item.key).expect("Unable to write to file");
-                    writeln!(file, "Value: {:?}", state_item.value).expect("Unable to write to file");
-                    writeln!(file, "Proof: {:?}", root).expect("Unable to write to file");
-                    writeln!(file, "----------------------------------------------------------").expect("Unable to write to file");
+                    writeln!(file, "Value: {:?}", state_item.value)
+                        .expect("Unable to write to file");
+                    writeln!(file, "State Root: {:?}", root).expect("Unable to write to file");
+                    writeln!(
+                        file,
+                        "Block Hash: {:?}",
+                        view_state_response_for_values.result.block_hash.as_str()
+                    )
+                        .expect("Unable to write to file");
+                    writeln!(
+                        file,
+                        "----------------------------------------------------------"
+                    )
+                        .expect("Unable to write to file");
                 }
             }
         }
@@ -121,6 +135,77 @@ async fn main() -> Result<(), Error> {
             "Proof for the key-value pair isn't verified."
         );
 
-        Ok(())
+        // getting last block by hash from the previous query function
+        let block_request = BlockRequestOptionOne {
+            jsonrpc: "2.0",
+            id: "dontcare",
+            method: "block",
+            params: BlockParamString {
+                block_id: view_state_response_for_values.result.block_hash,
+            },
+        };
+
+        let block_response: BlockResponse = client
+            .post(rpc_url)
+            .json(&block_request)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        let mut block_height_iter = block_response.result.header.height;
+
+        let state_root = result_proof_boolean.first().unwrap().clone().1.to_string();
+
+        loop {
+            let block_request = BlockRequestOptionTwo {
+                jsonrpc: "2.0",
+                id: "dontcare",
+                method: "block",
+                params: BlockParamBlockHeight {
+                    block_id: block_height_iter.clone(),
+                },
+            };
+
+            if client
+                .post(rpc_url)
+                .json(&block_request)
+                .send()
+                .await?
+                .json::<BlockResponse>()
+                .await
+                .is_err()
+            {
+                block_height_iter -= 1;
+                continue;
+            } else {
+                let block_response: BlockResponse = client
+                    .post(rpc_url)
+                    .json(&block_request)
+                    .send()
+                    .await?
+                    .json()
+                    .await?;
+
+                for chunk in block_response.result.chunks.iter() {
+                    if chunk.prev_state_root == state_root {
+                        writeln!(
+                            file,
+                            "{}",
+                            format!(
+                                "success prev_state_root {:?} for the block {:?}",
+                                chunk.prev_state_root, block_response.result.header.height
+                            )
+                        )
+                            .expect("Unable to write to file");
+                        println!("Script finished!");
+
+                        exit(0);
+                    }
+                }
+            }
+
+            block_height_iter -= 1;
+        }
     }
 }

@@ -1,13 +1,13 @@
-use std::{collections::HashMap, io, sync::Arc};
 use borsh::BorshDeserialize;
+use std::{collections::HashMap, io, sync::Arc};
 
+use crate::nibble_slice::NibbleSlice;
+use crate::raw_node::{RawTrieNode, RawTrieNodeWithSize};
 use near_primitives::{
     hash::CryptoHash,
     trie_key::trie_key_parsers,
     types::{AccountId, StateRoot},
 };
-use crate::nibble_slice::NibbleSlice;
-use crate::raw_node::{RawTrieNode, RawTrieNodeWithSize};
 
 pub(crate) struct ProofVerifier {
     nodes: HashMap<CryptoHash, RawTrieNodeWithSize>,
@@ -27,13 +27,20 @@ impl ProofVerifier {
     }
 
     pub(crate) fn get_nodes(&self) -> Vec<(CryptoHash, RawTrieNodeWithSize)> {
-        self.nodes.iter().map(|(crypto_hash, raw_trie_node_with_size)| (*crypto_hash, raw_trie_node_with_size.clone())).collect()
+        self.nodes
+            .iter()
+            .map(|(crypto_hash, raw_trie_node_with_size)| {
+                (*crypto_hash, raw_trie_node_with_size.clone())
+            })
+            .collect()
     }
 
     pub(crate) fn get_nodes_hashes(&self) -> Vec<CryptoHash> {
-        self.nodes.iter().map(|(crypto_hash, _)| *crypto_hash).collect()
+        self.nodes
+            .iter()
+            .map(|(crypto_hash, _)| *crypto_hash)
+            .collect()
     }
-
 
     pub(crate) fn verify(
         &self,

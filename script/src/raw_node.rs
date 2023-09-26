@@ -44,8 +44,11 @@ pub struct Children<T = CryptoHash>(pub [Option<T>; 16]);
 impl<T> Children<T> {
     /// Iterates over existing children; `None` entries are omitted.
     #[inline]
-    pub fn iter<'a>(&'a self) -> impl Iterator<Item=(u8, &'a T)> {
-        self.0.iter().enumerate().flat_map(|(i, el)| Some(i as u8).zip(el.as_ref()))
+    pub fn iter<'a>(&'a self) -> impl Iterator<Item = (u8, &'a T)> {
+        self.0
+            .iter()
+            .enumerate()
+            .flat_map(|(i, el)| Some(i as u8).zip(el.as_ref()))
     }
 }
 
@@ -79,7 +82,11 @@ impl<T: BorshSerialize> BorshSerialize for Children<T> {
             pos <<= 1;
         }
         bitmap.serialize(wr)?;
-        self.0.iter().flat_map(Option::as_ref).map(|child| child.serialize(wr)).collect()
+        self.0
+            .iter()
+            .flat_map(Option::as_ref)
+            .map(|child| child.serialize(wr))
+            .collect()
     }
 }
 
@@ -101,7 +108,7 @@ mod children {
 
     impl<T: std::fmt::Debug> std::fmt::Debug for Debug<'_, T> {
         fn fmt(&self, fmtr: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            write!(fmtr, "{}: {:?}", self.0.0, self.0.1)
+            write!(fmtr, "{}: {:?}", self.0 .0, self.0 .1)
         }
     }
 
@@ -114,12 +121,14 @@ mod children {
 
 pub const EMPTY_ROOT: StateRoot = StateRoot::new();
 
-
 #[test]
 fn test_encode_decode() {
     #[track_caller]
     fn test(node: RawTrieNode, encoded: &[u8]) {
-        let node = RawTrieNodeWithSize { node, memory_usage: 42 };
+        let node = RawTrieNodeWithSize {
+            node,
+            memory_usage: 42,
+        };
         let mut buf = node.try_to_vec().unwrap();
         assert_eq!(encoded, buf.as_slice());
         assert_eq!(node, RawTrieNodeWithSize::try_from_slice(&buf).unwrap());
@@ -130,7 +139,10 @@ fn test_encode_decode() {
         assert!(got.is_err(), "got: {got:?}");
     }
 
-    let value = ValueRef { length: 3, hash: CryptoHash::hash_bytes(&[123, 245, 255]) };
+    let value = ValueRef {
+        length: 3,
+        hash: CryptoHash::hash_bytes(&[123, 245, 255]),
+    };
     let node = RawTrieNode::Leaf(vec![1, 2, 3], value.clone());
     #[rustfmt::skip]
         let encoded = [
@@ -191,7 +203,6 @@ fn test_encode_decode() {
         /* memory usage: */ 42, 0, 0, 0, 0, 0, 0, 0
     ];
     test(node, &encoded);
-
 
     let node = RawTrieNode::Extension(vec![123, 245, 255], EMPTY_ROOT);
     #[rustfmt::skip]

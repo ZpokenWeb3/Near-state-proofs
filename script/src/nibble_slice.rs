@@ -85,7 +85,10 @@ impl<'a> NibbleSlice<'a> {
 
     /// Create a new nibble slice from the given HPE encoded data (e.g. output of `encoded()`).
     pub fn from_encoded(data: &'a [u8]) -> (Self, bool) {
-        (Self::new_offset(data, if data[0] & 16 == 16 { 1 } else { 2 }), data[0] & 32 == 32)
+        (
+            Self::new_offset(data, if data[0] & 16 == 16 { 1 } else { 2 }),
+            data[0] & 32 == 32,
+        )
     }
 
     /// Is this an empty slice?
@@ -111,7 +114,10 @@ impl<'a> NibbleSlice<'a> {
 
     /// Return object which represents a view on to this slice (further) offset by `i` nibbles.
     pub fn mid(&self, i: usize) -> Self {
-        NibbleSlice { data: self.data, offset: self.offset + i }
+        NibbleSlice {
+            data: self.data,
+            offset: self.offset + i,
+        }
     }
 
     /// Do we start with the same nibbles as the whole of `them`?
@@ -164,7 +170,11 @@ impl<'a> NibbleSlice<'a> {
         let mut i = l % 2;
         r.push(if i == 1 { 0x10 + self.at(0) } else { 0 } + if is_leaf { 0x20 } else { 0 });
         while i < l {
-            let bit1 = if i < self.len() { self.at(i) } else { other.at(i - self.len()) };
+            let bit1 = if i < self.len() {
+                self.at(i)
+            } else {
+                other.at(i - self.len())
+            };
             let bit2 = if i + 1 < l {
                 if i + 1 < self.len() {
                     self.at(i + 1)
@@ -286,19 +296,43 @@ mod tests {
     #[test]
     fn encoded() {
         let n = NibbleSlice::new(D);
-        assert_eq!(n.encoded(false), ElasticArray36::from_slice(&[0x00, 0x01, 0x23, 0x45]));
-        assert_eq!(n.encoded(true), ElasticArray36::from_slice(&[0x20, 0x01, 0x23, 0x45]));
-        assert_eq!(n.mid(1).encoded(false), ElasticArray36::from_slice(&[0x11, 0x23, 0x45]));
-        assert_eq!(n.mid(1).encoded(true), ElasticArray36::from_slice(&[0x31, 0x23, 0x45]));
+        assert_eq!(
+            n.encoded(false),
+            ElasticArray36::from_slice(&[0x00, 0x01, 0x23, 0x45])
+        );
+        assert_eq!(
+            n.encoded(true),
+            ElasticArray36::from_slice(&[0x20, 0x01, 0x23, 0x45])
+        );
+        assert_eq!(
+            n.mid(1).encoded(false),
+            ElasticArray36::from_slice(&[0x11, 0x23, 0x45])
+        );
+        assert_eq!(
+            n.mid(1).encoded(true),
+            ElasticArray36::from_slice(&[0x31, 0x23, 0x45])
+        );
     }
 
     #[test]
     fn from_encoded() {
         let n = NibbleSlice::new(D);
-        assert_eq!((n, false), NibbleSlice::from_encoded(&[0x00, 0x01, 0x23, 0x45]));
-        assert_eq!((n, true), NibbleSlice::from_encoded(&[0x20, 0x01, 0x23, 0x45]));
-        assert_eq!((n.mid(1), false), NibbleSlice::from_encoded(&[0x11, 0x23, 0x45]));
-        assert_eq!((n.mid(1), true), NibbleSlice::from_encoded(&[0x31, 0x23, 0x45]));
+        assert_eq!(
+            (n, false),
+            NibbleSlice::from_encoded(&[0x00, 0x01, 0x23, 0x45])
+        );
+        assert_eq!(
+            (n, true),
+            NibbleSlice::from_encoded(&[0x20, 0x01, 0x23, 0x45])
+        );
+        assert_eq!(
+            (n.mid(1), false),
+            NibbleSlice::from_encoded(&[0x11, 0x23, 0x45])
+        );
+        assert_eq!(
+            (n.mid(1), true),
+            NibbleSlice::from_encoded(&[0x31, 0x23, 0x45])
+        );
     }
 
     fn encode_decode(nibbles: &[u8], is_leaf: bool) {
